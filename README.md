@@ -10,6 +10,10 @@
 
 ComfyUI custom nodes for Hunyuan3D-Part: 3D part segmentation and generation.
 
+
+https://github.com/user-attachments/assets/e587a64e-dcb3-4ed5-8748-67baec3f700c
+
+
 ## Features
 
 **P3-SAM Segmentation**: Segment 3D meshes into parts
