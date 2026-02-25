@@ -1,0 +1,26 @@
+python = "3.12"
+
+[cuda]
+packages = ["flash-attn", "torch-scatter", "torch-cluster", "torch", "torchvision", "spconv", "cumm"]
+
+[pypi-dependencies]
+trimesh = "*"
+pymeshlab = "==2023.12.post3"
+diffusers = "*"
+timm = "*"
+einops = "*"
+numpy = ">=1.20.0"
+scipy = "*"
+scikit-learn = "*"
+scikit-image = "*"
+fpsample = "==0.3.2"
+addict = "*"
+omegaconf = "*"
+huggingface-hub = "*"
+hf-transfer = "*"
+Pillow = "*"
+tqdm = "*"
+pccm = "*"
+hf_xet = "*"
+psutil = "*"
+comfy-aimdo = "*"
