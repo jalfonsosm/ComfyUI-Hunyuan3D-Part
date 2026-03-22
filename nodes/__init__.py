@@ -7,6 +7,7 @@ from .bbox_io_nodes import NODE_CLASS_MAPPINGS as _bbox_io, NODE_DISPLAY_NAME_MA
 from .exploded_viewer import NODE_CLASS_MAPPINGS as _viewer, NODE_DISPLAY_NAME_MAPPINGS as _viewer_d
 from .bbox_visualization import NODE_CLASS_MAPPINGS as _bbox_viz, NODE_DISPLAY_NAME_MAPPINGS as _bbox_viz_d
 from .mesh_io import NODE_CLASS_MAPPINGS as _mesh_io, NODE_DISPLAY_NAME_MAPPINGS as _mesh_io_d
+from .face_ids_io_nodes import NODE_CLASS_MAPPINGS as _face_ids_io, NODE_DISPLAY_NAME_MAPPINGS as _face_ids_io_d
 
 NODE_CLASS_MAPPINGS = {
     **_loaders,
@@ -16,6 +17,7 @@ NODE_CLASS_MAPPINGS = {
     **_viewer,
     **_bbox_viz,
     **_mesh_io,
+    **_face_ids_io,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -26,6 +28,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     **_viewer_d,
     **_bbox_viz_d,
     **_mesh_io_d,
+    **_face_ids_io_d,
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
