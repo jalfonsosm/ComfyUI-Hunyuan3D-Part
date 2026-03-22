@@ -8,7 +8,68 @@ import csv
 import numpy as np
 import folder_paths
 import os
+import trimesh
 from pathlib import Path
+
+
+class ExtractFaceIDsFromMesh:
+    """
+    Extract FACE_IDS from a segmented mesh.
+
+    P3SAMSegmentMesh stores segmentation labels in mesh.face_attributes['part_id'].
+    This node converts that representation back into the FACE_IDS payload used by
+    the I/O nodes and any downstream tooling that expects per-face segment IDs.
+    """
+
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "mesh": ("TRIMESH",),
+            },
+        }
+
+    RETURN_TYPES = ("FACE_IDS",)
+    RETURN_NAMES = ("face_ids",)
+    FUNCTION = "extract"
+    CATEGORY = "Hunyuan3D/IO"
+
+    def extract(self, mesh):
+        try:
+            if not isinstance(mesh, trimesh.Trimesh):
+                raise TypeError(
+                    "ExtractFaceIDsFromMesh expects a segmented TRIMESH from "
+                    "P3SAMSegmentMesh."
+                )
+
+            face_attributes = getattr(mesh, "face_attributes", None) or {}
+            face_ids_array = face_attributes.get("part_id")
+            if face_ids_array is None:
+                raise ValueError(
+                    "Mesh has no face_attributes['part_id']. Connect the mesh "
+                    "output of P3SAMSegmentMesh."
+                )
+
+            face_ids_array = np.asarray(face_ids_array, dtype=np.int32)
+            valid_ids = face_ids_array[face_ids_array >= 0]
+            num_parts = int(len(np.unique(valid_ids))) if len(valid_ids) else 0
+
+            face_ids_output = {
+                "face_ids": face_ids_array,
+                "num_parts": num_parts,
+            }
+
+            print(
+                f"[ExtractFaceIDsFromMesh] Extracted {len(face_ids_array)} face IDs "
+                f"({num_parts} parts)"
+            )
+            return (face_ids_output,)
+
+        except Exception as e:
+            print(f"[ExtractFaceIDsFromMesh] Error extracting face IDs: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            raise
 
 
 class SaveFaceIDs:
@@ -25,11 +86,11 @@ class SaveFaceIDs:
                 "filename": ("STRING", {
                     "default": "face_ids.json",
                     "multiline": False,
-                    "tooltip": "Output filename. Use .json or .csv extension."
+                    "tooltip": "Output filename. Use .json, .csv, or .npy extension."
                 }),
-                "format": (["json", "csv"], {
+                "format": (["json", "csv", "npy"], {
                     "default": "json",
-                    "tooltip": "Export format: json (structured) or csv (one face_id per row)."
+                    "tooltip": "Export format: json (structured), csv (one face_id per row), or npy (raw numpy array)."
                 }),
             },
         }
@@ -70,6 +131,9 @@ class SaveFaceIDs:
                     for i, part_id in enumerate(face_ids_array):
                         writer.writerow([i, int(part_id)])
 
+            elif format == "npy":
+                np.save(output_path, face_ids_array.astype(np.int32))
+
             print(f"[SaveFaceIDs] Saved {len(face_ids_array)} face IDs "
                   f"({num_parts} parts) to: {output_path}")
 
@@ -84,7 +148,7 @@ class SaveFaceIDs:
 
 class LoadFaceIDs:
     """
-    Load FACE_IDS from JSON or CSV file.
+    Load FACE_IDS from JSON, CSV, or NPY file.
     Useful for restoring cached P3-SAM segmentation results.
     """
 
@@ -95,7 +159,7 @@ class LoadFaceIDs:
                 "file_path": ("STRING", {
                     "default": "",
                     "multiline": False,
-                    "tooltip": "Path to face_ids JSON or CSV file."
+                    "tooltip": "Path to face_ids JSON, CSV, or NPY file."
                 }),
             },
         }
@@ -135,8 +199,16 @@ class LoadFaceIDs:
                 face_ids_array = np.array(face_ids_list, dtype=np.int32)
                 num_parts = len(np.unique(face_ids_array[face_ids_array >= 0]))
 
+            elif ext == ".npy":
+                face_ids_array = np.asarray(np.load(file_path), dtype=np.int32)
+                if face_ids_array.ndim != 1:
+                    raise ValueError(
+                        f"Invalid NPY shape: {face_ids_array.shape}. Expected a 1D array of face IDs."
+                    )
+                num_parts = len(np.unique(face_ids_array[face_ids_array >= 0]))
+
             else:
-                raise ValueError(f"Unsupported file format: {ext}. Use .json or .csv")
+                raise ValueError(f"Unsupported file format: {ext}. Use .json, .csv, or .npy")
 
             face_ids_output = {
                 'face_ids': face_ids_array,
@@ -157,11 +229,13 @@ class LoadFaceIDs:
 
 # Node mappings for ComfyUI
 NODE_CLASS_MAPPINGS = {
+    "ExtractFaceIDsFromMesh": ExtractFaceIDsFromMesh,
     "SaveFaceIDs": SaveFaceIDs,
     "LoadFaceIDs": LoadFaceIDs,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
+    "ExtractFaceIDsFromMesh": "Extract Face IDs From Mesh",
     "SaveFaceIDs": "Save Face IDs",
     "LoadFaceIDs": "Load Face IDs",
 }
